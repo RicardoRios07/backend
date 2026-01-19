@@ -1,0 +1,206 @@
+const Product = require('../models/Product.model');
+
+// ====== CRUD PARA LIBROS (PRODUCTOS) ======
+
+/**
+ * Crear un nuevo libro (producto)
+ * Body requerido: title, synopsis, authors, year, price, coverImage
+ */
+exports.createProduct = async (req, res, next) => {
+  try {
+    const { title, synopsis, authors, year, price, coverImage } = req.body;
+
+    // Validaciones
+    if (!title || !synopsis || !authors || !year || !price || !coverImage) {
+      return res.status(400).json({ 
+        message: 'Faltan campos requeridos: title, synopsis, authors, year, price, coverImage' 
+      });
+    }
+
+    const product = new Product({
+      title: title.trim(),
+      synopsis: synopsis.trim(),
+      authors: Array.isArray(authors) ? authors : [authors],
+      year: parseInt(year, 10),
+      price: parseFloat(price),
+      coverImage: coverImage.trim(),
+      createdBy: req.user._id,
+      category: 'libros'
+    });
+
+    await product.save();
+    res.status(201).json({
+      success: true,
+      message: 'Libro creado exitosamente',
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Actualizar un libro existente
+ */
+exports.updateProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // No permitir actualizar createdBy y updatedAt manualmente
+    delete updates.createdBy;
+    delete updates.createdAt;
+    updates.updatedAt = new Date();
+
+    // Validar que authors sea un array
+    if (updates.authors && !Array.isArray(updates.authors)) {
+      updates.authors = [updates.authors];
+    }
+
+    // Validar que year sea un número
+    if (updates.year) {
+      updates.year = parseInt(updates.year, 10);
+    }
+
+    // Validar que price sea un número
+    if (updates.price) {
+      updates.price = parseFloat(updates.price);
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      id,
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: 'Libro no encontrado' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Libro actualizado exitosamente',
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Eliminar (desactivar) un libro
+ */
+exports.deleteProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Soft delete: solo marcar como inactivo
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { active: false, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: 'Libro no encontrado' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Libro eliminado exitosamente',
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Obtener libros activos (públicos)
+ * Query params: q (búsqueda), category, page, limit
+ */
+exports.getProducts = async (req, res, next) => {
+  try {
+    const { q, page = 1, limit = 20 } = req.query;
+    const filter = { active: true };
+
+    if (q) {
+      filter.$text = { $search: q };
+    }
+
+    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+    const products = await Product.find(filter)
+      .select('-pdfUrl') // No incluir URL del PDF en listados públicos
+      .skip(skip)
+      .limit(parseInt(limit, 10))
+      .sort({ createdAt: -1 });
+
+    const total = await Product.countDocuments(filter);
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total,
+        pages: Math.ceil(total / parseInt(limit, 10))
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Obtener un libro por ID
+ */
+exports.getProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product || !product.active) {
+      return res.status(404).json({ message: 'Libro no encontrado' });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Obtener todos los libros (incluyendo inactivos) - SOLO ADMIN
+ * Query params: page, limit
+ */
+exports.getAllProductsAdmin = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+
+    const products = await Product.find()
+      .populate('createdBy', 'email name')
+      .skip(skip)
+      .limit(parseInt(limit, 10))
+      .sort({ createdAt: -1 });
+
+    const total = await Product.countDocuments();
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total,
+        pages: Math.ceil(total / parseInt(limit, 10))
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};

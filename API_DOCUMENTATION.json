@@ -1,0 +1,740 @@
+{
+    "info": {
+        "title": "E-Commerce Backend API - Venta de Libros en PDF",
+        "version": "1.0.0",
+        "description": "API REST para gestionar tienda de libros en PDF con pagos a través de Payphone",
+        "baseUrl": "http://localhost:3001/api"
+    },
+    "endpoints": {
+        "authentication": {
+            "login": {
+                "method": "POST",
+                "path": "/auth/login",
+                "description": "Autenticar usuario y obtener token JWT",
+                "public": true,
+                "body": {
+                    "email": "string (required)",
+                    "password": "string (required)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "message": "string",
+                    "data": {
+                        "token": "string (JWT)",
+                        "user": {
+                            "id": "string (ObjectId)",
+                            "email": "string",
+                            "name": "string",
+                            "role": "string (USER|ADMIN)"
+                        }
+                    }
+                },
+                "statusCode": 200
+            },
+            "register": {
+                "method": "POST",
+                "path": "/auth/register",
+                "description": "Registrar un nuevo usuario",
+                "public": true,
+                "body": {
+                    "email": "string (required, unique)",
+                    "password": "string (required, min 6 chars)",
+                    "name": "string (required)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "message": "string",
+                    "data": {
+                        "user": {
+                            "id": "string",
+                            "email": "string",
+                            "name": "string",
+                            "role": "string"
+                        }
+                    }
+                },
+                "statusCode": 201
+            }
+        },
+        "products": {
+            "listPublic": {
+                "method": "GET",
+                "path": "/products",
+                "description": "Listar todos los libros activos (búsqueda y paginación)",
+                "public": true,
+                "queryParams": {
+                    "q": "string (búsqueda por título, sinopsis, autores)",
+                    "page": "number (default: 1)",
+                    "limit": "number (default: 20)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "data": [
+                        {
+                            "id": "string (ObjectId)",
+                            "title": "string",
+                            "synopsis": "string",
+                            "authors": [
+                                "string"
+                            ],
+                            "year": "number",
+                            "price": "number",
+                            "payPhoneLink": "string (URL)",
+                            "coverImage": "string (URL)",
+                            "category": "string",
+                            "active": "boolean",
+                            "createdAt": "ISO date"
+                        }
+                    ],
+                    "pagination": {
+                        "page": "number",
+                        "limit": "number",
+                        "total": "number",
+                        "pages": "number"
+                    }
+                },
+                "statusCode": 200
+            },
+            "getDetail": {
+                "method": "GET",
+                "path": "/products/:id",
+                "description": "Obtener detalles completos de un libro específico",
+                "public": true,
+                "pathParams": {
+                    "id": "string (ObjectId del libro)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "data": {
+                        "id": "string",
+                        "title": "string",
+                        "synopsis": "string",
+                        "authors": [
+                            "string"
+                        ],
+                        "year": "number",
+                        "price": "number",
+                        "payPhoneLink": "string (URL de pago)",
+                        "coverImage": "string (URL)",
+                        "category": "string",
+                        "active": "boolean",
+                        "createdAt": "ISO date"
+                    }
+                },
+                "statusCode": 200
+            }
+        },
+        "admin": {
+            "dashboard": {
+                "method": "GET",
+                "path": "/admin/dashboard",
+                "description": "Obtener estadísticas generales del dashboard",
+                "requiresAuth": true,
+                "requiredRole": "ADMIN",
+                "response": {
+                    "success": "boolean",
+                    "data": {
+                        "usersCount": "number",
+                        "productsCount": "number",
+                        "ordersCount": "number",
+                        "revenue": "number"
+                    }
+                },
+                "statusCode": 200
+            },
+            "products": {
+                "list": {
+                    "method": "GET",
+                    "path": "/admin/products",
+                    "description": "Listar todos los libros (incluyendo inactivos)",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "queryParams": {
+                        "page": "number (default: 1)",
+                        "limit": "number (default: 50)",
+                        "active": "boolean (filtrar por estado)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": [
+                            {
+                                "id": "string",
+                                "title": "string",
+                                "synopsis": "string",
+                                "authors": [
+                                    "string"
+                                ],
+                                "year": "number",
+                                "price": "number",
+                                "payPhoneLink": "string",
+                                "coverImage": "string",
+                                "pdfUrl": "string (opcional)",
+                                "active": "boolean",
+                                "createdBy": {
+                                    "id": "string",
+                                    "email": "string",
+                                    "name": "string"
+                                },
+                                "createdAt": "ISO date",
+                                "updatedAt": "ISO date"
+                            }
+                        ],
+                        "pagination": {
+                            "page": "number",
+                            "limit": "number",
+                            "total": "number",
+                            "pages": "number"
+                        }
+                    },
+                    "statusCode": 200
+                },
+                "getDetail": {
+                    "method": "GET",
+                    "path": "/admin/products/:id",
+                    "description": "Obtener detalles de un libro específico",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "pathParams": {
+                        "id": "string (ObjectId del libro)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": {
+                            "id": "string",
+                            "title": "string",
+                            "synopsis": "string",
+                            "authors": [
+                                "string"
+                            ],
+                            "year": "number",
+                            "price": "number",
+                            "payPhoneLink": "string",
+                            "coverImage": "string",
+                            "pdfUrl": "string",
+                            "active": "boolean",
+                            "createdBy": {
+                                "id": "string",
+                                "email": "string",
+                                "name": "string"
+                            },
+                            "createdAt": "ISO date",
+                            "updatedAt": "ISO date"
+                        }
+                    },
+                    "statusCode": 200
+                },
+                "create": {
+                    "method": "POST",
+                    "path": "/admin/products",
+                    "description": "Crear un nuevo libro",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "body": {
+                        "title": "string (required) - Título del libro",
+                        "synopsis": "string (required) - Sinopsis o descripción del libro",
+                        "authors": "array of strings (required) - Ej: ['Juan Pérez', 'María García']",
+                        "year": "number (required) - Año de publicación",
+                        "price": "number (required) - Precio en dólares",
+                        "payPhoneLink": "string (required) - URL de pago Payphone",
+                        "coverImage": "string (required) - URL de la portada del libro",
+                        "pdfUrl": "string (optional) - URL del archivo PDF"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "message": "string",
+                        "data": {
+                            "id": "string",
+                            "title": "string",
+                            "synopsis": "string",
+                            "authors": [
+                                "string"
+                            ],
+                            "year": "number",
+                            "price": "number",
+                            "payPhoneLink": "string",
+                            "coverImage": "string",
+                            "pdfUrl": "string",
+                            "category": "libros",
+                            "active": "boolean",
+                            "createdBy": "string (ObjectId)",
+                            "createdAt": "ISO date",
+                            "updatedAt": "ISO date"
+                        }
+                    },
+                    "statusCode": 201
+                },
+                "update": {
+                    "method": "PUT",
+                    "path": "/admin/products/:id",
+                    "description": "Actualizar un libro existente",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "pathParams": {
+                        "id": "string (ObjectId del libro)"
+                    },
+                    "body": {
+                        "title": "string (optional)",
+                        "synopsis": "string (optional)",
+                        "authors": "array of strings (optional)",
+                        "year": "number (optional)",
+                        "price": "number (optional)",
+                        "payPhoneLink": "string (optional)",
+                        "coverImage": "string (optional)",
+                        "pdfUrl": "string (optional)",
+                        "active": "boolean (optional)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "message": "string",
+                        "data": {
+                            "id": "string",
+                            "title": "string",
+                            "synopsis": "string",
+                            "authors": [
+                                "string"
+                            ],
+                            "year": "number",
+                            "price": "number",
+                            "payPhoneLink": "string",
+                            "coverImage": "string",
+                            "pdfUrl": "string",
+                            "active": "boolean",
+                            "createdBy": {
+                                "id": "string",
+                                "email": "string",
+                                "name": "string"
+                            },
+                            "createdAt": "ISO date",
+                            "updatedAt": "ISO date"
+                        }
+                    },
+                    "statusCode": 200
+                },
+                "delete": {
+                    "method": "DELETE",
+                    "path": "/admin/products/:id",
+                    "description": "Eliminar (desactivar) un libro",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "pathParams": {
+                        "id": "string (ObjectId del libro)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "message": "string",
+                        "data": {
+                            "id": "string",
+                            "title": "string",
+                            "active": "boolean (ahora false)"
+                        }
+                    },
+                    "statusCode": 200
+                }
+            },
+            "users": {
+                "list": {
+                    "method": "GET",
+                    "path": "/admin/users",
+                    "description": "Listar todos los usuarios",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "queryParams": {
+                        "page": "number (default: 1)",
+                        "limit": "number (default: 50)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": [
+                            {
+                                "id": "string",
+                                "email": "string",
+                                "name": "string",
+                                "role": "string (USER|ADMIN)",
+                                "createdAt": "ISO date"
+                            }
+                        ]
+                    },
+                    "statusCode": 200
+                },
+                "updateRole": {
+                    "method": "PUT",
+                    "path": "/admin/users/:id/role",
+                    "description": "Actualizar el rol de un usuario",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "pathParams": {
+                        "id": "string (ObjectId del usuario)"
+                    },
+                    "body": {
+                        "role": "string (USER|ADMIN)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": {
+                            "id": "string",
+                            "email": "string",
+                            "name": "string",
+                            "role": "string"
+                        }
+                    },
+                    "statusCode": 200
+                },
+                "delete": {
+                    "method": "DELETE",
+                    "path": "/admin/users/:id",
+                    "description": "Eliminar un usuario",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "pathParams": {
+                        "id": "string (ObjectId del usuario)"
+                    },
+                    "statusCode": 204
+                }
+            },
+            "orders": {
+                "list": {
+                    "method": "GET",
+                    "path": "/admin/orders",
+                    "description": "Listar todas las órdenes",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "queryParams": {
+                        "page": "number (default: 1)",
+                        "limit": "number (default: 50)",
+                        "status": "string (PENDING|PAID|FAILED)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": [
+                            {
+                                "id": "string",
+                                "userId": {
+                                    "id": "string",
+                                    "name": "string",
+                                    "email": "string"
+                                },
+                                "products": [
+                                    {
+                                        "productId": "string",
+                                        "title": "string",
+                                        "price": "number",
+                                        "qty": "number"
+                                    }
+                                ],
+                                "amount": "number",
+                                "paymentStatus": "string",
+                                "createdAt": "ISO date"
+                            }
+                        ]
+                    },
+                    "statusCode": 200
+                },
+                "updateStatus": {
+                    "method": "PUT",
+                    "path": "/admin/orders/:id/status",
+                    "description": "Actualizar el estado de una orden",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "pathParams": {
+                        "id": "string (ObjectId de la orden)"
+                    },
+                    "body": {
+                        "status": "string (PENDING|PAID|FAILED)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": {
+                            "id": "string",
+                            "paymentStatus": "string",
+                            "amount": "number",
+                            "createdAt": "ISO date"
+                        }
+                    },
+                    "statusCode": 200
+                }
+            },
+            "stats": {
+                "salesByDay": {
+                    "method": "GET",
+                    "path": "/admin/stats/sales-by-day",
+                    "description": "Obtener ventas por día",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "queryParams": {
+                        "from": "ISO date (optional)",
+                        "to": "ISO date (optional)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": [
+                            {
+                                "date": "string (YYYY-MM-DD)",
+                                "total": "number",
+                                "count": "number"
+                            }
+                        ]
+                    },
+                    "statusCode": 200
+                },
+                "topProducts": {
+                    "method": "GET",
+                    "path": "/admin/stats/top-products",
+                    "description": "Obtener productos más vendidos",
+                    "requiresAuth": true,
+                    "requiredRole": "ADMIN",
+                    "queryParams": {
+                        "limit": "number (default: 10)"
+                    },
+                    "response": {
+                        "success": "boolean",
+                        "data": [
+                            {
+                                "productId": "string",
+                                "title": "string",
+                                "qty": "number",
+                                "revenue": "number"
+                            }
+                        ]
+                    },
+                    "statusCode": 200
+                }
+            }
+        },
+        "cart": {
+            "add": {
+                "method": "POST",
+                "path": "/cart",
+                "description": "Agregar un libro al carrito",
+                "requiresAuth": true,
+                "body": {
+                    "productId": "string (ObjectId del libro)",
+                    "qty": "number (cantidad)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "message": "string",
+                    "data": {
+                        "cartId": "string",
+                        "products": [
+                            {
+                                "productId": "string",
+                                "title": "string",
+                                "price": "number",
+                                "qty": "number"
+                            }
+                        ],
+                        "total": "number"
+                    }
+                },
+                "statusCode": 201
+            },
+            "get": {
+                "method": "GET",
+                "path": "/cart",
+                "description": "Obtener carrito del usuario actual",
+                "requiresAuth": true,
+                "response": {
+                    "success": "boolean",
+                    "data": {
+                        "cartId": "string",
+                        "products": [
+                            {
+                                "productId": "string",
+                                "title": "string",
+                                "price": "number",
+                                "qty": "number"
+                            }
+                        ],
+                        "total": "number"
+                    }
+                },
+                "statusCode": 200
+            },
+            "update": {
+                "method": "PUT",
+                "path": "/cart/:productId",
+                "description": "Actualizar cantidad de un libro en el carrito",
+                "requiresAuth": true,
+                "pathParams": {
+                    "productId": "string (ObjectId del libro)"
+                },
+                "body": {
+                    "qty": "number (nueva cantidad)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "data": {
+                        "cartId": "string",
+                        "products": [
+                            {
+                                "productId": "string",
+                                "title": "string",
+                                "price": "number",
+                                "qty": "number"
+                            }
+                        ],
+                        "total": "number"
+                    }
+                },
+                "statusCode": 200
+            },
+            "remove": {
+                "method": "DELETE",
+                "path": "/cart/:productId",
+                "description": "Remover un libro del carrito",
+                "requiresAuth": true,
+                "pathParams": {
+                    "productId": "string (ObjectId del libro)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "data": {
+                        "cartId": "string",
+                        "products": [
+                            {
+                                "productId": "string",
+                                "title": "string",
+                                "price": "number",
+                                "qty": "number"
+                            }
+                        ],
+                        "total": "number"
+                    }
+                },
+                "statusCode": 200
+            },
+            "clear": {
+                "method": "DELETE",
+                "path": "/cart",
+                "description": "Vaciar el carrito",
+                "requiresAuth": true,
+                "response": {
+                    "success": "boolean",
+                    "data": {
+                        "cartId": "string",
+                        "products": [],
+                        "total": 0
+                    }
+                },
+                "statusCode": 200
+            }
+        },
+        "payment": {
+            "initiate": {
+                "method": "POST",
+                "path": "/payment/payphone",
+                "description": "Iniciar pago con Payphone",
+                "requiresAuth": true,
+                "body": {
+                    "amount": "number (monto total)",
+                    "orderId": "string (ObjectId de la orden)"
+                },
+                "response": {
+                    "success": "boolean",
+                    "message": "string",
+                    "data": {
+                        "orderId": "string",
+                        "paymentUrl": "string (URL de redirección a Payphone)"
+                    }
+                },
+                "statusCode": 200
+            },
+            "callback": {
+                "method": "POST",
+                "path": "/payment/payphone/callback",
+                "description": "Callback de Payphone (notificación de pago)",
+                "public": true,
+                "body": {
+                    "transactionId": "string",
+                    "orderId": "string",
+                    "status": "string (success|failed)",
+                    "amount": "number"
+                },
+                "response": {
+                    "success": "boolean",
+                    "message": "string"
+                },
+                "statusCode": 200
+            }
+        }
+    },
+    "dataModels": {
+        "Product": {
+            "description": "Modelo de Libro (Producto)",
+            "fields": {
+                "id": "ObjectId - ID único del libro",
+                "title": "String - Título del libro",
+                "synopsis": "String - Sinopsis o descripción del libro",
+                "authors": "Array[String] - Lista de autores del libro",
+                "year": "Number - Año de publicación",
+                "price": "Number - Precio en dólares",
+                "payPhoneLink": "String - URL de pago en Payphone",
+                "coverImage": "String - URL de la portada",
+                "pdfUrl": "String - URL del archivo PDF (opcional)",
+                "category": "String - Categoría (siempre 'libros')",
+                "active": "Boolean - Si el libro está disponible",
+                "createdBy": "ObjectId - ID del administrador que creó el libro",
+                "createdAt": "Date - Fecha de creación",
+                "updatedAt": "Date - Fecha de última actualización"
+            }
+        },
+        "User": {
+            "description": "Modelo de Usuario",
+            "fields": {
+                "id": "ObjectId",
+                "email": "String - Correo único",
+                "password": "String - Contraseña hasheada",
+                "name": "String",
+                "role": "String - USER o ADMIN",
+                "createdAt": "Date"
+            }
+        },
+        "Order": {
+            "description": "Modelo de Orden/Compra",
+            "fields": {
+                "id": "ObjectId",
+                "userId": "ObjectId - Referencia al Usuario",
+                "products": "Array - Libros comprados",
+                "amount": "Number - Monto total",
+                "paymentStatus": "String - PENDING, PAID, FAILED",
+                "payphoneTransactionId": "String - ID de transacción Payphone",
+                "createdAt": "Date"
+            }
+        },
+        "Cart": {
+            "description": "Modelo de Carrito de Compras",
+            "fields": {
+                "id": "ObjectId",
+                "userId": "ObjectId - Referencia al Usuario",
+                "products": "Array - Libros en carrito",
+                "total": "Number - Total actualizado",
+                "createdAt": "Date",
+                "updatedAt": "Date"
+            }
+        }
+    },
+    "authentication": {
+        "type": "JWT (Bearer Token)",
+        "headerFormat": "Authorization: Bearer <token>",
+        "tokenExpiry": "7 days",
+        "refreshable": false
+    },
+    "errorHandling": {
+        "400": "Bad Request - Validación de datos fallida",
+        "401": "Unauthorized - Token inválido o expirado",
+        "403": "Forbidden - Permisos insuficientes (no es ADMIN)",
+        "404": "Not Found - Recurso no encontrado",
+        "500": "Internal Server Error - Error en el servidor",
+        "responseFormat": {
+            "success": "boolean",
+            "message": "string (descripción del error)",
+            "data": "object (datos si aplica)"
+        }
+    },
+    "notes": {
+        "payPhone": "El flujo de pago es: Usuario agrega libros al carrito → Compra → Se genera orden → Se redirige a Payphone con el link de pago del primer libro (o carrito si Payphone lo soporta) → Después de pagar, puede descargar el PDF",
+        "softDelete": "Los libros se deshabilitan (soft delete) en lugar de eliminarse, manteniendo el historial",
+        "security": "Todas las rutas de admin requieren token JWT válido y rol ADMIN",
+        "searchable": "Los campos title, synopsis y authors tienen índice de búsqueda de texto para búsquedas eficientes"
+    }
+}
