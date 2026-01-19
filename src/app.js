@@ -4,7 +4,9 @@ const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 
-dotenv.config();
+// Cargar variables de entorno según el ambiente
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: envFile });
 
 const path = require('path');
 const app = express();
