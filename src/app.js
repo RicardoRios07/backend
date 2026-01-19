@@ -12,7 +12,13 @@ const path = require('path');
 const app = express();
 
 app.use(cors({
-  origin: ['https://v0.dev', 'https://*.vercel.app', 'http://localhost:3000'],
+  origin: [
+    'https://v0.dev', 
+    'https://*.vercel.app', 
+    'http://localhost:3000',
+    'http://18.221.14.186:3000',
+    'http://18.221.14.186:3001'
+  ],
   credentials: true
 }));
 app.use(express.json());
