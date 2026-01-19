@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-dotenv.config();
+
+// Cargar variables de entorno según el ambiente
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+dotenv.config({ path: envFile });
+
 const User = require('../src/models/User.model');
 
 async function main() {
