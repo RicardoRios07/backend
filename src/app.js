@@ -17,7 +17,9 @@ app.use(cors({
     'https://*.vercel.app', 
     'http://localhost:3000',
     'http://18.221.14.186:3000',
-    'http://18.221.14.186:3001'
+    'http://18.221.14.186:3001',
+    'https://ecommerce-backend.duckdns.org',
+    'https://18.221.14.186'
   ],
   credentials: true
 }));
