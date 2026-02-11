@@ -3,10 +3,31 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
-
-dotenv.config();
-
+const fs = require('fs');
 const path = require('path');
+
+// Cargar variables de entorno - intentar múltiples archivos
+const possibleEnvFiles = [
+  path.join(__dirname, '../.env.production'),
+  path.join(__dirname, '../.env.local'),
+  path.join(__dirname, '../.env')
+];
+
+let envLoaded = false;
+for (const envFile of possibleEnvFiles) {
+  if (fs.existsSync(envFile)) {
+    console.log(`📄 Cargando configuración desde: ${path.basename(envFile)}`);
+    dotenv.config({ path: envFile });
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  console.warn('⚠️  No se encontró archivo .env, usando variables de entorno del sistema');
+  dotenv.config(); // Intentar cargar .env por defecto
+}
+
 const app = express();
 
 // CORS configuration
