@@ -4,23 +4,37 @@ const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 
-// Cargar variables de entorno según el ambiente
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-dotenv.config({ path: envFile });
+dotenv.config();
 
 const path = require('path');
 const app = express();
 
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ['http://localhost:3000', 'http://localhost:3001', 'https://v0.dev'];
+
 app.use(cors({
-  origin: [
-    'https://v0.dev', 
-    'https://*.vercel.app', 
-    'http://localhost:3000',
-    'http://18.221.14.186:3000',
-    'http://18.221.14.186:3001',
-    'https://ecommerce-backend.duckdns.org',
-    'https://18.221.14.186'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list or matches wildcard pattern
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin.includes('*')) {
+        const pattern = new RegExp('^' + allowedOrigin.replace(/\*/g, '.*') + '$');
+        return pattern.test(origin);
+      }
+      return allowedOrigin === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
