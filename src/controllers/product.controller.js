@@ -236,14 +236,47 @@ exports.downloadProduct = async (req, res, next) => {
     const order = await Order.findOne({ userId, paymentStatus: 'PAID', 'products.productId': id });
     if (!order && req.user.role !== 'ADMIN') return res.status(403).json({ message: 'No has comprado este libro' });
 
-    let filePath = product.pdfUrl;
-    const fileName = path.basename(filePath);
+    // 4. Determinar si es un archivo local o URL
+    let pdfUrl = product.pdfUrl.trim();
+    let isUrl = false;
+
+    // Si empieza con http/https/www, es URL.
+    if (pdfUrl.match(/^(http|https|www\.)/i)) {
+      isUrl = true;
+    }
+    // Si NO empieza con '/' ni 'files/', y NO existe localmente, asumimos URL.
+    else if (!pdfUrl.startsWith('/') && !pdfUrl.startsWith('files/')) {
+      const potentialLocalPath = path.join(__dirname, '../../files', path.basename(pdfUrl));
+      if (!fs.existsSync(potentialLocalPath)) {
+        isUrl = true; // No está en disco, debe ser URL
+      }
+    }
+
+    if (isUrl) {
+      if (!pdfUrl.startsWith('http')) {
+        pdfUrl = 'https://' + pdfUrl;
+      }
+      return res.redirect(pdfUrl);
+    }
+
+    // 5. Si es archivo local
+    let fileName = path.basename(pdfUrl);
+    // Si pdfUrl incluía ruta (files/...), la respetamos, sino asumimos raíz de files/
+    // Pero para evitar directory traversal, usamos basename + carpeta files fija.
+
+    // CASO ESPECIAL: Si la BD tiene 'files/archivo.pdf', el basename es 'archivo.pdf'.
+    // Y lo buscamos en backend/files/archivo.pdf.
+
     const safePath = path.join(__dirname, '../../files', fileName);
 
     if (fs.existsSync(safePath)) {
       res.download(safePath, `${product.title}.pdf`);
     } else {
-      res.status(404).json({ message: 'Archivo no encontrado' });
+      console.error(`Archivo no encontrado: ${safePath}. Valor en BD: ${product.pdfUrl}`);
+      // Fallback final: Si no está en disco, redirigir como URL por si acaso
+      let fallbackUrl = product.pdfUrl;
+      if (!fallbackUrl.startsWith('http')) fallbackUrl = 'https://' + fallbackUrl;
+      return res.redirect(fallbackUrl);
     }
   } catch (err) {
     next(err);
