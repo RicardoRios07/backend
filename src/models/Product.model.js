@@ -20,7 +20,7 @@ const ProductSchema = new mongoose.Schema({
   active: { type: Boolean, default: true, index: true },
   
   // Auditoría
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Opcional, para soportar seed
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now }
 });

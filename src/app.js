@@ -6,12 +6,17 @@ const connectDB = require('./config/db');
 const fs = require('fs');
 const path = require('path');
 
-// Cargar variables de entorno - intentar múltiples archivos
-const possibleEnvFiles = [
-  path.join(__dirname, '../.env.production'),
-  path.join(__dirname, '../.env.local'),
-  path.join(__dirname, '../.env')
-];
+// Cargar variables de entorno según el entorno
+const isProduction = process.env.NODE_ENV === 'production';
+const possibleEnvFiles = isProduction 
+  ? [
+      path.join(__dirname, '../.env.production'),
+      path.join(__dirname, '../.env')
+    ]
+  : [
+      path.join(__dirname, '../.env.local'),
+      path.join(__dirname, '../.env')
+    ];
 
 let envLoaded = false;
 for (const envFile of possibleEnvFiles) {

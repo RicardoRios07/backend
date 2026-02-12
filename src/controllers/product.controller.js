@@ -158,10 +158,22 @@ exports.getProducts = async (req, res, next) => {
 exports.getProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Validar que el ID sea un ObjectId válido
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Libro no encontrado' 
+      });
+    }
+
     const product = await Product.findById(id);
 
     if (!product || !product.active) {
-      return res.status(404).json({ message: 'Libro no encontrado' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Libro no encontrado' 
+      });
     }
 
     res.json({
@@ -169,7 +181,11 @@ exports.getProduct = async (req, res, next) => {
       data: product
     });
   } catch (err) {
-    next(err);
+    // Si hay error, asumir que el ID es inválido y retornar 404
+    res.status(404).json({
+      success: false,
+      message: 'Libro no encontrado'
+    });
   }
 };
 
