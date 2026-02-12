@@ -11,6 +11,9 @@ router.get('/', productController.getProducts);
 // Obtener un libro específico por ID
 router.get('/:id', productController.getProduct);
 
+// Descargar libro (PDF) - Requiere autenticación
+router.get('/:id/download', auth, productController.downloadProduct);
+
 // ====== RUTAS ADMINISTRADOR ======
 
 // Obtener todos los libros (incluyendo inactivos) - SOLO ADMIN

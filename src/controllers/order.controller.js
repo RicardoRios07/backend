@@ -3,7 +3,9 @@ const Order = require('../models/Order.model');
 exports.getOrders = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 })
+      .populate('products.productId');
     res.json(orders);
   } catch (err) {
     next(err);

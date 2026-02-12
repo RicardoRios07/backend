@@ -1,4 +1,7 @@
 const Product = require('../models/Product.model');
+const Order = require('../models/Order.model');
+const fs = require('fs');
+const path = require('path');
 
 // ====== CRUD PARA LIBROS (PRODUCTOS) ======
 
@@ -12,8 +15,8 @@ exports.createProduct = async (req, res, next) => {
 
     // Validaciones
     if (!title || !synopsis || !authors || !year || !price || !coverImage) {
-      return res.status(400).json({ 
-        message: 'Faltan campos requeridos: title, synopsis, authors, year, price, coverImage' 
+      return res.status(400).json({
+        message: 'Faltan campos requeridos: title, synopsis, authors, year, price, coverImage'
       });
     }
 
@@ -93,7 +96,7 @@ exports.updateProduct = async (req, res, next) => {
 exports.deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     // Soft delete: solo marcar como inactivo
     const product = await Product.findByIdAndUpdate(
       id,
@@ -161,18 +164,18 @@ exports.getProduct = async (req, res, next) => {
 
     // Validar que el ID sea un ObjectId válido
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Libro no encontrado' 
+        message: 'Libro no encontrado'
       });
     }
 
     const product = await Product.findById(id);
 
     if (!product || !product.active) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Libro no encontrado' 
+        message: 'Libro no encontrado'
       });
     }
 
@@ -216,6 +219,32 @@ exports.getAllProductsAdmin = async (req, res, next) => {
         pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.downloadProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const product = await Product.findById(id);
+    if (!product) return res.status(404).json({ message: 'Libro no encontrado' });
+    if (!product.pdfUrl) return res.status(404).json({ message: 'Este libro no tiene archivo PDF disponible' });
+
+    const order = await Order.findOne({ userId, paymentStatus: 'PAID', 'products.productId': id });
+    if (!order && req.user.role !== 'ADMIN') return res.status(403).json({ message: 'No has comprado este libro' });
+
+    let filePath = product.pdfUrl;
+    const fileName = path.basename(filePath);
+    const safePath = path.join(__dirname, '../../files', fileName);
+
+    if (fs.existsSync(safePath)) {
+      res.download(safePath, `${product.title}.pdf`);
+    } else {
+      res.status(404).json({ message: 'Archivo no encontrado' });
+    }
   } catch (err) {
     next(err);
   }
