@@ -8,15 +8,15 @@ const path = require('path');
 
 // Cargar variables de entorno según el entorno
 const isProduction = process.env.NODE_ENV === 'production';
-const possibleEnvFiles = isProduction 
+const possibleEnvFiles = isProduction
   ? [
-      path.join(__dirname, '../.env.production'),
-      path.join(__dirname, '../.env')
-    ]
+    path.join(__dirname, '../.env.production'),
+    path.join(__dirname, '../.env')
+  ]
   : [
-      path.join(__dirname, '../.env.local'),
-      path.join(__dirname, '../.env')
-    ];
+    path.join(__dirname, '../.env.local'),
+    path.join(__dirname, '../.env')
+  ];
 
 let envLoaded = false;
 for (const envFile of possibleEnvFiles) {
@@ -36,31 +36,10 @@ if (!envLoaded) {
 const app = express();
 
 // CORS configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:3001', 'https://v0.dev'];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Check if origin is in allowed list or matches wildcard pattern
-    const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (allowedOrigin.includes('*')) {
-        const pattern = new RegExp('^' + allowedOrigin.replace(/\*/g, '.*') + '$');
-        return pattern.test(origin);
-      }
-      return allowedOrigin === origin;
-    });
-    
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*', // Permitir todas las conexiones como solicitó el usuario
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 app.use(express.json());

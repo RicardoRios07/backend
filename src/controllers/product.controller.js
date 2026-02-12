@@ -256,7 +256,32 @@ exports.downloadProduct = async (req, res, next) => {
       if (!pdfUrl.startsWith('http')) {
         pdfUrl = 'https://' + pdfUrl;
       }
-      return res.redirect(pdfUrl);
+
+      // Usar axios para hacer proxy del PDF y evitar problemas de CORS
+      try {
+        const axios = require('axios');
+        const response = await axios({
+          method: 'get',
+          url: pdfUrl,
+          responseType: 'stream',
+          timeout: 30000 // 30 segundos timeout
+        });
+
+        // Configurar headers para descarga
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${product.title.replace(/[^a-z0-9]/gi, '_')}.pdf"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        // Stream del archivo al cliente
+        response.data.pipe(res);
+        return;
+      } catch (proxyError) {
+        console.error('Error al hacer proxy del PDF:', proxyError.message);
+        return res.status(404).json({
+          message: 'No se pudo descargar el archivo desde la URL externa',
+          detail: proxyError.message
+        });
+      }
     }
 
     // 5. Si es archivo local
